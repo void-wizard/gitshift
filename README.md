@@ -105,14 +105,14 @@ If you want a shorter command, you can create a shell alias.
 For zsh:
 
 ```bash
-echo "alias gsh='gitshift'" >> ~/.zshrc
+printf '\n%s\n' "alias gsh='gitshift'" >> ~/.zshrc
 source ~/.zshrc
 ```
 
 For bash:
 
 ```bash
-echo "alias gsh='gitshift'" >> ~/.bashrc
+printf '\n%s\n' "alias gsh='gitshift'" >> ~/.bashrc
 source ~/.bashrc
 ```
 
