@@ -66,7 +66,7 @@ gitshift use work
 Show the current repository identity:
 
 ```bash
-gitshift current
+gitshift who
 ```
 
 Show help:
@@ -121,7 +121,7 @@ After that, you can use:
 ```bash
 gsh add work "Your Name" "you@company.com"
 gsh use work
-gsh current
+gsh who
 ```
 
 You can choose any short alias that fits your workflow, as long as it does not conflict with commands already installed on your system.

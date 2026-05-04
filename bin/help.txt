@@ -5,11 +5,11 @@ Usage:
   gitshift add <profile> <name> <email>
   gitshift list
   gitshift use <profile>
-  gitshift current
+  gitshift who
   gitshift help
 
 Examples:
   gitshift add work "Alice" "alice@company.com"
   gitshift add personal "Bob" "bob@example.com"
   gitshift use work
-  gitshift current
+  gitshift who
