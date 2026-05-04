@@ -165,7 +165,7 @@ status() {
 }
 
 # Dispatch CLI commands
-case "${1:-current}" in
+case "${1:-who}" in
   init)
     ensure_config
     echo "gitshift configuration is ready: $CONFIG_DIR"
