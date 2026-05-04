@@ -1,0 +1,15 @@
+gitshift - Git identity switcher
+
+Usage:
+  gitshift init
+  gitshift add <profile> <name> <email>
+  gitshift list
+  gitshift use <profile>
+  gitshift current
+  gitshift help
+
+Examples:
+  gitshift add work "Alice" "alice@company.com"
+  gitshift add personal "Bob" "bob@example.com"
+  gitshift use work
+  gitshift current
