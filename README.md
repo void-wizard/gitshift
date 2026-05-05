@@ -1,15 +1,17 @@
 # gitshift
 
-gitshift is a lightweight CLI for switching Git identities per repository.
+gitshift is a lightweight CLI for switching Git identities and GitHub SSH hosts per repository.
 
-It lets you save multiple Git profiles, such as work and personal identities, then apply one to the current repository using local Git config. gitshift can also show the active Git identity before running `git status`.
+It helps you manage multiple Git profiles, configure SSH host aliases, and clone GitHub repositories with the matching SSH identity.
 
 ## Features
 
 - Save multiple Git identity profiles
 - Switch `user.name` and `user.email` for the current repository
 - Store identity per repository using `git config --local`
-- Show current repository identity
+- Optionally bind profiles to GitHub owners and SSH hosts
+- Generate SSH keys and write `~/.ssh/config` entries
+- Clone GitHub repositories using the matching SSH host
 - Hook into `git status` to display active Git identity first
 
 ## Install
@@ -40,16 +42,23 @@ Initialize gitshift:
 gitshift init
 ```
 
-Add a profile:
-
-Avoid special characters in profile names, names, and emails, as they may break gitshift's profile lookup.
+Add a profile interactively:
 
 ```bash
-# gitshift add <profile> <name> <email>
-
-gitshift add work "Your Name" "you@company.com"
-gitshift add personal "Your Name" "you@example.com"
+gitshift add
 ```
+
+gitshift will ask for:
+
+```text
+Profile name
+Git user.name
+Git user.email
+GitHub owner/account
+SSH configuration
+```
+
+Avoid special characters in profile names, names, emails, and GitHub owners, as they may break gitshift's profile lookup.
 
 List saved profiles:
 
@@ -63,6 +72,26 @@ Apply a profile to the current Git repository:
 gitshift use work
 ```
 
+Clone a GitHub repository with the matching SSH host:
+
+```bash
+gitshift clone owner/repo
+gitshift clone git@github.com:owner/repo.git
+gitshift clone https://github.com/owner/repo.git
+```
+
+Remove a profile:
+
+```bash
+gitshift remove work
+```
+
+Remove all profiles:
+
+```bash
+gitshift remove --all
+```
+
 Show the current repository identity:
 
 ```bash
@@ -73,6 +102,35 @@ Show help:
 
 ```bash
 gitshift help
+```
+
+## SSH Profiles
+
+When adding a profile, gitshift can use an existing SSH host from `~/.ssh/config`:
+
+```sshconfig
+Host github-work
+  User git
+  HostName github.com
+  IdentityFile ~/.ssh/id_ed25519_work
+```
+
+Or it can generate a new SSH key and write an SSH config entry:
+
+```sshconfig
+# >>> gitshift work >>>
+Host github-work
+  HostName github.com
+  User git
+  IdentityFile /Users/you/.ssh/id_ed25519_gitshift_work
+  IdentitiesOnly yes
+# <<< gitshift work <<<
+```
+
+After generating a key, gitshift prints the public key so you can add it to GitHub:
+
+```text
+Settings -> SSH and GPG keys -> New SSH key
 ```
 
 ## Git Status Hook
@@ -119,7 +177,8 @@ source ~/.bashrc
 After that, you can use:
 
 ```bash
-gsh add work "Your Name" "you@company.com"
+gsh add
+gsh clone company/repo
 gsh use work
 gsh who
 ```
@@ -140,6 +199,7 @@ Installed files:
 ~/.gitshift/bin/gitshift
 ~/.gitshift/bin/help.txt
 ~/.gitshift/bin/shell-hook.sh
+~/.gitshift/bin/lib/
 ```
 
 Saved profiles:
@@ -151,14 +211,14 @@ Saved profiles:
 Profile format:
 
 ```text
-profile|name|email
+profile|name|email|github_owner|ssh_host
 ```
 
 Example:
 
 ```text
-work|Alice|alice@company.com
-personal|Bob|bob@example.com
+work|Alice|alice@company.com|company|github-work
+personal|Bob|bob@example.com|bob|github-personal
 ```
 
 ## How It Works
@@ -173,6 +233,26 @@ git config --local user.email "you@example.com"
 ```
 
 Because gitshift uses `--local`, it only changes the current repository and does not modify your global Git config.
+
+`gitshift clone <repo>` parses the GitHub owner from the repository URL, finds the profile whose GitHub owner matches it, and clones through that profile's SSH host.
+
+For example, this profile:
+
+```text
+work|Alice|alice@company.com|company|github-work
+```
+
+makes this command:
+
+```bash
+gitshift clone company/project
+```
+
+run:
+
+```bash
+git clone git@github-work:company/project.git
+```
 
 ## Uninstall
 

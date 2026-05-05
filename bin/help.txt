@@ -2,14 +2,20 @@ gitshift - Git identity switcher
 
 Usage:
   gitshift init
-  gitshift add <profile> <name> <email>
+  gitshift add
   gitshift list
   gitshift use <profile>
+  gitshift clone <repo>
+  gitshift remove <profile>
+  gitshift remove --all
   gitshift who
   gitshift help
 
 Examples:
-  gitshift add work "Alice" "alice@company.com"
-  gitshift add personal "Bob" "bob@example.com"
+  gitshift add
+  gitshift list
   gitshift use work
+  gitshift clone void-wizard/gitshift
+  gitshift clone git@github.com:void-wizard/gitshift.git
+  gitshift remove work
   gitshift who
