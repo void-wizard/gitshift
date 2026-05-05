@@ -1,0 +1,1097 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="gitshift is a lightweight CLI for switching Git identities and GitHub SSH profiles per repository.">
+    <title>gitshift</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #eef5f7;
+        --muted: #9aa8b5;
+        --soft: #101722;
+        --line: rgba(180, 202, 216, 0.18);
+        --panel: #0b1018;
+        --card: #121a26;
+        --card-soft: #172231;
+        --accent: #54d89f;
+        --accent-dark: #2fb77f;
+        --warm: #f6a35d;
+        --code: #080c12;
+        --code-soft: #111926;
+        --code-text: #dbe7ee;
+        --ok: #54c590;
+        --warn: #f4bf5f;
+        --bad: #ee6b6e;
+        --shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 12% 8%, rgba(84, 216, 159, 0.12), transparent 30%),
+          radial-gradient(circle at 82% 18%, rgba(246, 163, 93, 0.1), transparent 28%),
+          var(--panel);
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .page {
+        overflow: hidden;
+      }
+
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 1px solid rgba(180, 202, 216, 0.14);
+        background: rgba(11, 16, 24, 0.82);
+        backdrop-filter: blur(16px);
+      }
+
+      .nav-inner {
+        width: min(1120px, calc(100% - 32px));
+        min-height: 64px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 760;
+        font-size: 18px;
+      }
+
+      .mark {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        color: #ffffff;
+        background: linear-gradient(135deg, var(--accent-dark), #4767d8);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 17px;
+        font-weight: 800;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 620;
+      }
+
+      .nav-links a {
+        white-space: nowrap;
+      }
+
+      .nav-links a:hover {
+        color: var(--ink);
+      }
+
+      .hero {
+        position: relative;
+        min-height: calc(100svh - 64px);
+        display: grid;
+        align-items: center;
+        padding: 72px 0 40px;
+        background:
+          radial-gradient(circle at 84% 18%, rgba(246, 163, 93, 0.16), transparent 28%),
+          radial-gradient(circle at 18% 72%, rgba(84, 216, 159, 0.1), transparent 30%),
+          linear-gradient(180deg, #0b1018 0%, #0d1420 100%);
+      }
+
+      .hero-inner {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(360px, 1.1fr);
+        gap: clamp(28px, 5vw, 72px);
+        align-items: center;
+      }
+
+      .hero-inner > *,
+      .grid > *,
+      .steps > *,
+      .step > *,
+      .usage-grid > *,
+      .cta-inner > * {
+        min-width: 0;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        min-height: 32px;
+        padding: 0 12px;
+        border: 1px solid rgba(84, 216, 159, 0.28);
+        border-radius: 999px;
+        color: #9df0c4;
+        background: rgba(84, 216, 159, 0.1);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      h1 {
+        margin: 18px 0 0;
+        max-width: 11ch;
+        font-size: clamp(48px, 8vw, 92px);
+        line-height: 0.92;
+        letter-spacing: 0;
+      }
+
+      .lead {
+        margin: 24px 0 0;
+        max-width: 600px;
+        color: var(--muted);
+        font-size: clamp(18px, 2.2vw, 23px);
+        line-height: 1.48;
+      }
+
+      .actions {
+        margin-top: 32px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .button {
+        min-height: 46px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        padding: 0 18px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        font-weight: 750;
+        font-size: 15px;
+      }
+
+      .button-primary {
+        color: #ffffff;
+        background: var(--accent-dark);
+      }
+
+      .button-primary:hover {
+        background: #239667;
+      }
+
+      .button-secondary {
+        border-color: var(--line);
+        color: #eef5f7;
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .button-secondary:hover {
+        border-color: rgba(219, 231, 238, 0.38);
+      }
+
+      .install {
+        margin-top: 20px;
+        width: min(100%, 680px);
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 10px 10px 16px;
+        border: 1px solid rgba(180, 202, 216, 0.22);
+        border-radius: 8px;
+        background: rgba(18, 26, 38, 0.88);
+        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+      }
+
+      .install code {
+        min-width: 0;
+        overflow-x: auto;
+        color: #dbe7ee;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        white-space: nowrap;
+      }
+
+      .copy-button {
+        min-width: 72px;
+        min-height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 10px;
+        border: 0;
+        border-radius: 6px;
+        color: #072014;
+        background: var(--accent);
+        font: inherit;
+        font-size: 12px;
+        font-weight: 760;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .copy-button:hover {
+        background: #86e8b9;
+      }
+
+      .copy-button:focus-visible {
+        outline: 3px solid rgba(31, 122, 92, 0.28);
+        outline-offset: 2px;
+      }
+
+      .terminal {
+        min-width: 0;
+        overflow: hidden;
+        border-radius: 8px;
+        border: 1px solid rgba(180, 202, 216, 0.16);
+        background: var(--code);
+        box-shadow: var(--shadow);
+      }
+
+      .terminal-bar {
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 0 16px;
+        background: var(--code-soft);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .dots {
+        display: flex;
+        gap: 8px;
+      }
+
+      .dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+      }
+
+      .dot-red {
+        background: var(--bad);
+      }
+
+      .dot-yellow {
+        background: var(--warn);
+      }
+
+      .dot-green {
+        background: var(--ok);
+      }
+
+      .terminal-title {
+        color: #91a2b2;
+        font-size: 12px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+
+      .terminal-body {
+        min-height: 430px;
+        padding: clamp(18px, 3vw, 28px);
+        overflow-x: auto;
+        color: var(--code-text);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: clamp(12px, 1.5vw, 15px);
+        line-height: 1.75;
+      }
+
+      .prompt {
+        color: #72dfb0;
+      }
+
+      .dim {
+        color: #8ea0af;
+      }
+
+      .blue {
+        color: #8fc7ff;
+      }
+
+      .orange {
+        color: #f4bf8a;
+      }
+
+      .section {
+        padding: clamp(64px, 9vw, 104px) 0;
+      }
+
+      .section-soft {
+        background: var(--soft);
+      }
+
+      .wrap {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+
+      .section-head {
+        max-width: 760px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: clamp(30px, 4vw, 50px);
+        line-height: 1.02;
+        letter-spacing: 0;
+      }
+
+      .section-copy {
+        margin: 16px 0 0;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.6;
+      }
+
+      .grid {
+        margin-top: 34px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .feature {
+        min-width: 0;
+        min-height: 220px;
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(18, 26, 38, 0.86);
+      }
+
+      .feature-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        color: #ffffff;
+        background: #4767d8;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-weight: 850;
+      }
+
+      .feature:nth-child(2) .feature-icon {
+        background: var(--accent);
+      }
+
+      .feature:nth-child(3) .feature-icon {
+        background: var(--warm);
+      }
+
+      h3 {
+        margin: 20px 0 0;
+        font-size: 20px;
+        line-height: 1.2;
+      }
+
+      .feature p {
+        margin: 12px 0 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .steps {
+        margin-top: 34px;
+        display: grid;
+        gap: 12px;
+        counter-reset: steps;
+      }
+
+      .step {
+        min-width: 0;
+        counter-increment: steps;
+        display: grid;
+        grid-template-columns: 48px 1fr;
+        gap: 16px;
+        align-items: start;
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(18, 26, 38, 0.88);
+      }
+
+      .step::before {
+        content: counter(steps);
+        width: 40px;
+        height: 40px;
+        display: grid;
+        place-items: center;
+        border-radius: 8px;
+        color: #ffffff;
+        background: var(--accent);
+        font-weight: 800;
+      }
+
+      .step strong {
+        display: block;
+        font-size: 18px;
+      }
+
+      .step > div > code {
+        min-width: 0;
+        display: block;
+        width: 100%;
+        margin-top: 10px;
+        padding: 12px 14px;
+        border: 1px solid rgba(180, 202, 216, 0.18);
+        border-radius: 8px;
+        overflow-x: auto;
+        color: #dbe7ee;
+        background: #141922;
+        box-shadow: inset 3px 0 0 var(--accent);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        white-space: nowrap;
+      }
+
+      .step > div > code::before {
+        content: "$ ";
+        color: #72dfb0;
+      }
+
+      .step p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .step p code,
+      .note code,
+      .usage-command span code,
+      .result code {
+        padding: 2px 5px;
+        border-radius: 5px;
+        color: #dbe7ee;
+        background: rgba(219, 231, 238, 0.08);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.92em;
+        white-space: normal;
+      }
+
+      .note {
+        margin-top: 12px;
+        padding: 12px 14px;
+        border: 1px solid rgba(84, 216, 159, 0.2);
+        border-radius: 8px;
+        color: #a7e9c6;
+        background: rgba(84, 216, 159, 0.08);
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .result {
+        margin-top: 12px;
+        padding: 12px 14px;
+        border-left: 3px solid var(--warm);
+        border-radius: 8px;
+        color: #d8c7b5;
+        background: rgba(246, 163, 93, 0.1);
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .result strong {
+        display: inline;
+        font-size: inherit;
+        color: #ffc08b;
+      }
+
+      .usage-grid {
+        margin-top: 18px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .usage-command {
+        min-width: 0;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(23, 34, 49, 0.76);
+      }
+
+      .usage-command span {
+        display: block;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .usage-command code + span {
+        margin-top: 8px;
+      }
+
+      .usage-command code {
+        min-width: 0;
+        display: block;
+        margin-top: 8px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        color: #dbe7ee;
+        background: #141922;
+        overflow-x: auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        white-space: nowrap;
+      }
+
+      .usage-command code::before {
+        content: "$ ";
+        color: #72dfb0;
+      }
+
+      .usage-command .field-value {
+        min-width: 0;
+        display: block;
+        margin-top: 8px;
+        padding: 10px 12px;
+        border: 1px solid rgba(180, 202, 216, 0.18);
+        border-radius: 8px;
+        color: #e7eef3;
+        background: rgba(255, 255, 255, 0.05);
+        overflow-x: auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        white-space: nowrap;
+      }
+
+      .usage-command .field-value::before {
+        content: "";
+      }
+
+      .cta {
+        padding: clamp(56px, 8vw, 86px) 0;
+        color: #ffffff;
+        background:
+          radial-gradient(circle at 78% 10%, rgba(84, 216, 159, 0.12), transparent 28%),
+          #0f1723;
+      }
+
+      .cta-inner {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 24px;
+        align-items: center;
+      }
+
+      .cta h2 {
+        max-width: 720px;
+      }
+
+      .cta p {
+        max-width: 660px;
+        color: #b8c4ce;
+      }
+
+      .cta .button-secondary {
+        color: #ffffff;
+        border-color: rgba(255, 255, 255, 0.22);
+        background: rgba(255, 255, 255, 0.07);
+      }
+
+      .footer {
+        padding: 42px 0 32px;
+        color: #b8c4ce;
+        border-top: 1px solid rgba(180, 202, 216, 0.12);
+        background: #090d14;
+        font-size: 14px;
+      }
+
+      .footer-inner {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        display: grid;
+        gap: 28px;
+      }
+
+      .footer-main {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 28px;
+        flex-wrap: wrap;
+      }
+
+      .footer-brand {
+        max-width: 420px;
+      }
+
+      .footer-brand .brand {
+        color: #ffffff;
+      }
+
+      .footer-brand p {
+        margin: 14px 0 0;
+        color: #9aa8b5;
+        line-height: 1.6;
+      }
+
+      .footer-links {
+        display: flex;
+        gap: 22px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        font-weight: 650;
+      }
+
+      .footer-links a {
+        color: #dbe7ee;
+      }
+
+      .footer-links a:hover {
+        color: #ffffff;
+      }
+
+      .footer-bottom {
+        padding-top: 22px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        color: #8795a3;
+      }
+
+      @media (max-width: 980px) {
+        .nav-links {
+          gap: 14px;
+          font-size: 13px;
+        }
+
+        .hero {
+          min-height: auto;
+          padding-top: 52px;
+        }
+
+        .hero-inner {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          max-width: 100%;
+        }
+
+        .terminal-body {
+          min-height: 340px;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .usage-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .feature {
+          min-height: 0;
+        }
+
+        .cta-inner {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .nav-inner {
+          width: min(100% - 24px, 1120px);
+        }
+
+        .nav-links a:nth-child(1),
+        .nav-links a:nth-child(2) {
+          display: none;
+        }
+
+        .hero-inner,
+        .wrap,
+        .cta-inner,
+        .footer-inner {
+          width: min(100% - 24px, 1120px);
+        }
+
+        .hero {
+          padding: 38px 0 28px;
+        }
+
+        .actions {
+          display: grid;
+          grid-template-columns: 1fr;
+        }
+
+        .button {
+          width: 100%;
+        }
+
+        .install {
+          grid-template-columns: 1fr;
+          padding: 14px;
+        }
+
+        .copy-button {
+          width: fit-content;
+        }
+
+        .terminal-bar {
+          padding: 0 12px;
+        }
+
+        .terminal-title {
+          max-width: 150px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .terminal-body {
+          min-height: 300px;
+        }
+
+        .footer-main,
+        .footer-bottom {
+          display: grid;
+          justify-content: stretch;
+        }
+
+        .footer-links {
+          justify-content: flex-start;
+          gap: 14px;
+        }
+
+        .step {
+          grid-template-columns: 1fr;
+          padding: 16px;
+        }
+
+        .step::before {
+          width: 36px;
+          height: 36px;
+        }
+
+        .step > div > code,
+        .usage-command code,
+        .usage-command .field-value {
+          padding: 10px;
+          font-size: 13px;
+        }
+
+        .usage-command {
+          padding: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <nav class="nav" aria-label="Primary navigation">
+        <div class="nav-inner">
+          <a class="brand" href="#top" aria-label="gitshift home">
+            <span class="mark">g</span>
+            <span>gitshift</span>
+          </a>
+          <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#usage">Usage</a>
+            <a href="https://github.com/void-wizard/gitshift">GitHub</a>
+          </div>
+        </div>
+      </nav>
+
+      <main id="top">
+        <section class="hero">
+          <div class="hero-inner">
+            <div>
+              <span class="eyebrow">Git identity switching for real projects</span>
+              <h1>gitshift</h1>
+              <p class="lead">A lightweight CLI for switching Git identities and GitHub SSH profiles per repository.</p>
+              <div class="actions">
+                <a class="button button-primary" href="https://github.com/void-wizard/gitshift">View on GitHub</a>
+                <a class="button button-secondary" href="#usage">See usage</a>
+              </div>
+              <div class="install" aria-label="Install command">
+                <code id="install-command">curl -fsSL https://raw.githubusercontent.com/void-wizard/gitshift/main/install.sh | bash</code>
+                <button class="copy-button" type="button" data-copy-target="install-command">Copy</button>
+              </div>
+            </div>
+
+            <div class="terminal" aria-label="gitshift terminal preview">
+              <div class="terminal-bar">
+                <div class="dots" aria-hidden="true">
+                  <span class="dot dot-red"></span>
+                  <span class="dot dot-yellow"></span>
+                  <span class="dot dot-green"></span>
+                </div>
+                <span class="terminal-title">~/projects/app</span>
+              </div>
+              <div class="terminal-body">
+                <div><span class="prompt">$</span> gitshift list</div>
+                <div class="dim">Saved profiles</div>
+                <div><span class="blue">work</span> Alice alice@company.com github-work</div>
+                <div><span class="blue">personal</span> Alice alice@example.com github-personal</div>
+                <br>
+                <div><span class="prompt">$</span> gitshift use work</div>
+                <div class="dim">Applied profile to current repository</div>
+                <div>Git user.name: <span class="orange">Alice</span></div>
+                <div>Git user.email: <span class="orange">alice@company.com</span></div>
+                <br>
+                <div><span class="prompt">$</span> git status</div>
+                <div class="dim">Git repository: /projects/app</div>
+                <div class="dim">Git user.name: Alice</div>
+                <div class="dim">Git user.email: alice@company.com</div>
+                <br>
+                <div>On branch main</div>
+                <div>nothing to commit, working tree clean</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="features" class="section">
+          <div class="wrap">
+            <div class="section-head">
+              <h2>Keep every repository on the right identity.</h2>
+              <p class="section-copy">gitshift helps developers who move between personal, work, client, and open source accounts without accidentally committing with the wrong Git user or SSH key.</p>
+            </div>
+
+            <div class="grid">
+              <article class="feature">
+                <div class="feature-icon">id</div>
+                <h3>Profile-based Git config</h3>
+                <p>Save multiple names and emails, then apply them to the current repository using local Git configuration.</p>
+              </article>
+
+              <article class="feature">
+                <div class="feature-icon">ssh</div>
+                <h3>GitHub SSH hosts</h3>
+                <p>Bind profiles to SSH host aliases so clones and pushes use the matching GitHub account.</p>
+              </article>
+
+              <article class="feature">
+                <div class="feature-icon">st</div>
+                <h3>Status awareness</h3>
+                <p>Show the active repository identity before normal Git status output, right where mistakes usually happen.</p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section id="usage" class="section section-soft">
+          <div class="wrap">
+            <div class="section-head">
+              <h2>Commands you run, and what happens next.</h2>
+              <p class="section-copy">gitshift is built around a small set of commands. Each one does one visible thing: install the tool, create profiles, apply an identity, clone with the right SSH host, or show the current repository identity.</p>
+            </div>
+
+            <div class="steps">
+              <div class="step">
+                <div>
+                  <strong>Install gitshift</strong>
+                  <p>Run the installer, then reload your shell configuration so the <code>gitshift</code> command is available in your terminal.</p>
+                  <code>curl -fsSL https://raw.githubusercontent.com/void-wizard/gitshift/main/install.sh | bash</code>
+                  <code>source ~/.zshrc</code>
+                  <div class="result"><strong>Result:</strong> gitshift is installed under <code>~/.gitshift</code>, added to your shell path, and ready to run in new terminal sessions.</div>
+                  <div class="note">Use <code>source ~/.bashrc</code> instead if Bash is your default shell. Installed files live under <code>~/.gitshift</code>.</div>
+                </div>
+              </div>
+
+              <div class="step">
+                <div>
+                  <strong>Initialize gitshift storage</strong>
+                  <p>Run init once to create the local files gitshift uses to store profiles.</p>
+                  <code>gitshift init</code>
+                  <div class="result"><strong>Result:</strong> gitshift prepares its configuration directory and profile file under <code>~/.gitshift</code>.</div>
+                  <div class="note">You can run this command again safely if you want to make sure gitshift storage exists.</div>
+                </div>
+              </div>
+
+              <div class="step">
+                <div>
+                  <strong>Add a profile</strong>
+                  <p>Run add to create a named identity profile. gitshift will ask for these fields during setup.</p>
+                  <code>gitshift add</code>
+                  <div class="usage-grid">
+                    <div class="usage-command">
+                      <span>Profile name</span>
+                      <span class="field-value">work</span>
+                      <span>The short name you use later with commands like <code>gitshift use work</code>.</span>
+                    </div>
+                    <div class="usage-command">
+                      <span>Git user.name</span>
+                      <span class="field-value">Alice</span>
+                      <span>The author name Git writes into commits.</span>
+                    </div>
+                    <div class="usage-command">
+                      <span>Git user.email</span>
+                      <span class="field-value">alice@company.com</span>
+                      <span>The author email Git writes into commits.</span>
+                    </div>
+                    <div class="usage-command">
+                      <span>GitHub owner</span>
+                      <span class="field-value">company</span>
+                      <span>The GitHub account or organization used when matching clone targets.</span>
+                    </div>
+                    <div class="usage-command">
+                      <span>SSH host</span>
+                      <span class="field-value">github-work</span>
+                      <span>The host alias in <code>~/.ssh/config</code> that uses the right SSH key.</span>
+                    </div>
+                  </div>
+                  <div class="result"><strong>Result:</strong> gitshift saves a profile record that connects a profile name, Git identity, GitHub owner, and optional SSH host.</div>
+                  <div class="note">Avoid special characters in profile names, names, emails, and GitHub owners so profile lookup remains predictable.</div>
+                </div>
+              </div>
+
+              <div class="step">
+                <div>
+                  <strong>Apply a profile to a repository</strong>
+                  <p>Run this inside a Git repository. In this example, <code>work</code> is the profile name you entered when running <code>gitshift add</code>.</p>
+                  <code>gitshift use work</code>
+                  <div class="result"><strong>Result:</strong> the current repository now commits with the Git user name and email stored in the <code>work</code> profile. Other repositories keep their own identities.</div>
+                  <div class="note">Local config affects only the current repository, so your global Git identity remains unchanged.</div>
+                </div>
+              </div>
+
+              <div class="step">
+                <div>
+                  <strong>Clone with the matching SSH identity</strong>
+                  <p>When a profile is bound to a GitHub owner and SSH host, gitshift can clone using the right host alias automatically.</p>
+                  <code>gitshift clone owner/repo</code>
+                  <code>gitshift clone git@github.com:owner/repo.git</code>
+                  <code>gitshift clone https://github.com/owner/repo.git</code>
+                  <div class="result"><strong>Result:</strong> gitshift detects the GitHub owner, chooses the matching saved profile, rewrites the clone URL to the matching SSH host, and clones the repository.</div>
+                  <div class="note">This is useful when work and personal GitHub accounts use different SSH keys on the same machine.</div>
+                </div>
+              </div>
+
+              <div class="step">
+                <div>
+                  <strong>Check what identity is active</strong>
+                  <p>Use <code>who</code> when you want a quick answer, or let the shell hook show identity information before normal Git status output.</p>
+                  <code>gitshift who</code>
+                  <code>git status</code>
+                  <div class="result"><strong>Result:</strong> gitshift prints the current repository path, Git user name, and Git email before you commit.</div>
+                  <div class="note">The status hook helps catch the most common mistake before you commit: the wrong name, email, or account context.</div>
+                </div>
+              </div>
+
+              <div class="step">
+                <div>
+                  <strong>Manage saved profiles</strong>
+                  <p>List profiles when you forget a name, remove one profile when it is no longer needed, or clear all profiles before rebuilding your setup.</p>
+                  <div class="usage-grid">
+                    <div class="usage-command">
+                      <span>Show all profiles</span>
+                      <code>gitshift list</code>
+                      <span>Prints the profiles saved on this machine.</span>
+                    </div>
+                    <div class="usage-command">
+                      <span>Remove one profile</span>
+                      <code>gitshift remove work</code>
+                      <span>Deletes the selected profile from gitshift storage.</span>
+                    </div>
+                    <div class="usage-command">
+                      <span>Remove all profiles</span>
+                      <code>gitshift remove --all</code>
+                      <span>Clears every saved profile after confirmation.</span>
+                    </div>
+                    <div class="usage-command">
+                      <span>Open command help</span>
+                      <code>gitshift help</code>
+                      <span>Shows available commands and usage examples.</span>
+                    </div>
+                  </div>
+                  <div class="note">Profile data is stored in <code>~/.gitshift/profiles</code>. Avoid special characters in profile names, names, emails, and GitHub owners.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="cta">
+          <div class="cta-inner">
+            <div>
+              <h2>Stop discovering the wrong Git identity after the commit.</h2>
+              <p class="section-copy">Use one small command to make each repository remember who it belongs to.</p>
+            </div>
+            <a class="button button-secondary" href="https://github.com/void-wizard/gitshift">Get gitshift</a>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div class="footer-inner">
+          <div class="footer-main">
+            <div class="footer-brand">
+              <a class="brand" href="#top" aria-label="gitshift home">
+                <span class="mark">g</span>
+                <span>gitshift</span>
+              </a>
+              <p>A tiny Bash CLI for per-repository Git identities and GitHub SSH host switching.</p>
+            </div>
+            <div class="footer-links">
+              <a href="#features">Features</a>
+              <a href="#usage">Usage</a>
+              <a href="https://github.com/void-wizard/gitshift">GitHub</a>
+              <a href="https://github.com/void-wizard/gitshift/releases">Releases</a>
+            </div>
+          </div>
+          <div class="footer-bottom">
+            <span>Built for developers who use more than one Git identity.</span>
+            <span>github.com/void-wizard/gitshift</span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    <script>
+      const copyButton = document.querySelector("[data-copy-target]");
+
+      copyButton.addEventListener("click", async () => {
+        const target = document.getElementById(copyButton.dataset.copyTarget);
+        const command = target.textContent.trim();
+        const originalText = copyButton.textContent;
+
+        try {
+          await navigator.clipboard.writeText(command);
+          copyButton.textContent = "Copied";
+        } catch {
+          copyButton.textContent = "Failed";
+        }
+
+        window.setTimeout(() => {
+          copyButton.textContent = originalText;
+        }, 1600);
+      });
+    </script>
+  </body>
+</html>
