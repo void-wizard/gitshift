@@ -77,4 +77,15 @@ clone_repo() {
   echo "Clone URL: $clone_url"
 
   command git clone "$clone_url"
+
+  # Apply the matched profile inside the cloned repository
+  local repo_dir
+  repo_dir="${repo_path%.git}"
+  repo_dir="${repo_dir##*/}"
+
+  (
+    cd "$repo_dir" || exit 1
+    use_profile "$profile"
+  )
+
 }
