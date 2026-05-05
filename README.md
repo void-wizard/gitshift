@@ -1,20 +1,33 @@
 # gitshift
 
-gitshift is a lightweight CLI for switching Git identities and GitHub SSH hosts per repository.
+A lightweight Bash CLI for switching Git identities and GitHub SSH hosts per repository.
 
-It helps you manage multiple Git profiles, configure SSH host aliases, and clone GitHub repositories with the matching SSH identity.
+gitshift helps you avoid committing with the wrong `user.name`, `user.email`, or SSH key when you work with multiple GitHub accounts.
 
-## Features
+Website: https://void-wizard.github.io/gitshift/
+
+## 1. What gitshift does
+
+gitshift lets you:
 
 - Save multiple Git identity profiles
-- Switch `user.name` and `user.email` for the current repository
-- Store identity per repository using `git config --local`
-- Optionally bind profiles to GitHub owners and SSH hosts
-- Generate SSH keys and write `~/.ssh/config` entries
-- Clone GitHub repositories using the matching SSH host
-- Hook into `git status` to display active Git identity first
+- Apply a profile to the current repository
+- Store repository identity with `git config --local`
+- Bind profiles to GitHub owners and SSH host aliases
+- Clone GitHub repositories with the matching SSH identity
+- Show the active Git identity before `git status`
 
-## Install
+## 2. Supported platforms
+
+gitshift is designed for:
+
+- macOS
+- Linux
+- Windows through WSL
+
+Native PowerShell or CMD on Windows is not currently supported.
+
+## 3. Install
 
 Run the installer:
 
@@ -22,33 +35,52 @@ Run the installer:
 curl -fsSL https://raw.githubusercontent.com/void-wizard/gitshift/main/install.sh | bash
 ```
 
-Then activate gitshift in your current shell:
+Then reload your shell config.
+
+For zsh:
 
 ```bash
 source ~/.zshrc
 ```
 
-If you use Bash:
+For Bash:
 
 ```bash
 source ~/.bashrc
 ```
 
-## Usage
+After installation, check that the command is available:
 
-Initialize gitshift:
+```bash
+gitshift help
+```
+
+## 4. Quick start
+
+### 4.1 Initialize gitshift
+
+Run this once to prepare gitshift storage:
 
 ```bash
 gitshift init
 ```
 
-Add a profile interactively:
+Result:
+
+```text
+gitshift configuration is ready: ~/.gitshift
+Profile file: ~/.gitshift/profiles
+```
+
+### 4.2 Add a profile
+
+Create a Git identity profile interactively:
 
 ```bash
 gitshift add
 ```
 
-gitshift will ask for:
+gitshift will ask for these fields:
 
 ```text
 Profile name
@@ -58,21 +90,84 @@ GitHub owner/account
 SSH configuration
 ```
 
-Avoid special characters in profile names, names, emails, and GitHub owners, as they may break gitshift's profile lookup.
+Example values:
 
-List saved profiles:
-
-```bash
-gitshift list
+```text
+Profile name: work
+Git user.name: Alice
+Git user.email: alice@company.com
+GitHub owner/account: company
+SSH host: github-work
 ```
 
-Apply a profile to the current Git repository:
+The profile name is the value you use later in commands such as:
 
 ```bash
 gitshift use work
 ```
 
-Clone a GitHub repository with the matching SSH host:
+Avoid special characters in profile names, names, emails, and GitHub owners, because they may break profile lookup.
+
+### 4.3 List saved profiles
+
+Show all profiles saved on this machine:
+
+```bash
+gitshift list
+```
+
+Example:
+
+```text
+work|Alice|alice@company.com|company|github-work
+personal|Alice|alice@example.com|alice|github-personal
+```
+
+### 4.4 Apply a profile to the current repository
+
+Go into a Git repository:
+
+```bash
+cd path/to/your/repo
+```
+
+Apply a profile:
+
+```bash
+gitshift use work
+```
+
+Here, `work` is the profile name you entered when running `gitshift add`.
+
+Result:
+
+```text
+Git user.name and Git user.email are written to this repository's local Git config.
+Other repositories keep their own identities.
+Your global Git config is not changed.
+```
+
+### 4.5 Show the active repository identity
+
+Run:
+
+```bash
+gitshift who
+```
+
+Result:
+
+```text
+Git repository: /path/to/repo
+Git user.name: Alice
+Git user.email: alice@company.com
+```
+
+## 5. Clone repositories
+
+gitshift can clone GitHub repositories with the matching SSH host.
+
+Supported formats:
 
 ```bash
 gitshift clone owner/repo
@@ -80,42 +175,75 @@ gitshift clone git@github.com:owner/repo.git
 gitshift clone https://github.com/owner/repo.git
 ```
 
-Remove a profile:
+Example:
+
+```bash
+gitshift clone company/project
+```
+
+If you have a profile like this:
+
+```text
+work|Alice|alice@company.com|company|github-work
+```
+
+gitshift will clone through the matching SSH host:
+
+```bash
+git clone git@github-work:company/project.git
+```
+
+This is useful when different GitHub accounts use different SSH keys.
+
+## 6. Manage profiles
+
+### 6.1 Remove one profile
 
 ```bash
 gitshift remove work
 ```
 
-Remove all profiles:
+Result:
+
+```text
+The work profile is removed from gitshift storage.
+```
+
+### 6.2 Remove all profiles
 
 ```bash
 gitshift remove --all
 ```
 
-Show the current repository identity:
+Result:
 
-```bash
-gitshift who
+```text
+All saved profiles are removed.
 ```
 
-Show help:
+### 6.3 Show help
 
 ```bash
 gitshift help
 ```
 
-## SSH Profiles
+## 7. SSH profiles
 
-When adding a profile, gitshift can use an existing SSH host from `~/.ssh/config`:
+When adding a profile, gitshift can use an existing SSH host from `~/.ssh/config`.
+
+Example:
 
 ```sshconfig
 Host github-work
-  User git
   HostName github.com
+  User git
   IdentityFile ~/.ssh/id_ed25519_work
+  IdentitiesOnly yes
 ```
 
-Or it can generate a new SSH key and write an SSH config entry:
+gitshift can also generate a new SSH key and write an SSH config entry.
+
+Example:
 
 ```sshconfig
 # >>> gitshift work >>>
@@ -130,10 +258,10 @@ Host github-work
 After generating a key, gitshift prints the public key so you can add it to GitHub:
 
 ```text
-Settings -> SSH and GPG keys -> New SSH key
+GitHub -> Settings -> SSH and GPG keys -> New SSH key
 ```
 
-## Git Status Hook
+## 8. Git status hook
 
 After installation, gitshift adds a shell hook for `git status`.
 
@@ -149,16 +277,18 @@ Example:
 
 ```text
 Git repository: /path/to/repo
-Git user.name: Your Name
-Git user.email: you@company.com
+Git user.name: Alice
+Git user.email: alice@company.com
 
 On branch main
-...
+nothing to commit, working tree clean
 ```
 
-## Alias
+This helps catch identity mistakes before you commit.
 
-If you want a shorter command, you can create a shell alias.
+## 9. Alias
+
+If you want a shorter command, you can create an alias.
 
 For zsh:
 
@@ -167,25 +297,26 @@ printf '\n%s\n' "alias gsh='gitshift'" >> ~/.zshrc
 source ~/.zshrc
 ```
 
-For bash:
+For Bash:
 
 ```bash
 printf '\n%s\n' "alias gsh='gitshift'" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-After that, you can use:
+Then you can use:
 
 ```bash
 gsh add
-gsh clone company/repo
+gsh list
 gsh use work
+gsh clone company/project
 gsh who
 ```
 
-You can choose any short alias that fits your workflow, as long as it does not conflict with commands already installed on your system.
+Choose an alias that does not conflict with commands already installed on your system.
 
-## Where Data Is Stored
+## 10. Where data is stored
 
 gitshift stores its files in:
 
@@ -218,12 +349,20 @@ Example:
 
 ```text
 work|Alice|alice@company.com|company|github-work
-personal|Bob|bob@example.com|bob|github-personal
+personal|Alice|alice@example.com|alice|github-personal
 ```
 
-## How It Works
+## 11. How it works
 
-`gitshift add` saves a profile to `~/.gitshift/profiles`.
+### 11.1 Adding a profile
+
+`gitshift add` saves a profile to:
+
+```text
+~/.gitshift/profiles
+```
+
+### 11.2 Applying a profile
 
 `gitshift use <profile>` writes the selected identity to the current repository:
 
@@ -232,9 +371,15 @@ git config --local user.name "Your Name"
 git config --local user.email "you@example.com"
 ```
 
-Because gitshift uses `--local`, it only changes the current repository and does not modify your global Git config.
+Because gitshift uses local Git config, it only changes the current repository.
 
-`gitshift clone <repo>` parses the GitHub owner from the repository URL, finds the profile whose GitHub owner matches it, and clones through that profile's SSH host.
+It does not change your global Git identity.
+
+### 11.3 Cloning a repository
+
+`gitshift clone <repo>` parses the GitHub owner from the repository URL.
+
+Then it finds the profile whose GitHub owner matches that owner.
 
 For example, this profile:
 
@@ -248,13 +393,13 @@ makes this command:
 gitshift clone company/project
 ```
 
-run:
+run through this SSH host:
 
 ```bash
 git clone git@github-work:company/project.git
 ```
 
-## Uninstall
+## 12. Uninstall
 
 Remove gitshift files:
 
@@ -262,7 +407,21 @@ Remove gitshift files:
 rm -rf ~/.gitshift
 ```
 
-Then remove the gitshift blocks from your shell config file, such as `~/.zshrc` or `~/.bashrc`:
+Then remove the gitshift blocks from your shell config file.
+
+For zsh, edit:
+
+```text
+~/.zshrc
+```
+
+For Bash, edit:
+
+```text
+~/.bashrc
+```
+
+Remove this block:
 
 ```bash
 # >>> gitshift path >>>
@@ -270,14 +429,24 @@ export PATH="$HOME/.gitshift/bin:$PATH"
 # <<< gitshift path <<<
 ```
 
+Also remove the git status hook block:
+
 ```bash
 # >>> gitshift git hook >>>
 ...
 # <<< gitshift git hook <<<
 ```
 
-Reload your shell:
+Reload your shell.
+
+For zsh:
 
 ```bash
 source ~/.zshrc
+```
+
+For Bash:
+
+```bash
+source ~/.bashrc
 ```
